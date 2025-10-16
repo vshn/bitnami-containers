@@ -1,7 +1,7 @@
 FROM docker.io/bitnami/minideb:bookworm
 ARG TARGETARCH
 LABEL org.opencontainers.image.title="redis" \
-      org.opencontainers.image.version="7.2.10" \
+      org.opencontainers.image.version="7.2.11" \
       org.opencontainers.image.licenses="Apache-2.0"
 ENV HOME="/" \
     OS_ARCH="${TARGETARCH:-amd64}" \
@@ -18,9 +18,9 @@ COPY redis-default.conf /opt/bitnami/redis/etc/redis-default.conf
 
 # Download and build Redis from official source
 RUN mkdir -p /tmp/redis && cd /tmp/redis && \
-    curl -SsLf "http://download.redis.io/releases/redis-7.2.10.tar.gz" -o redis-7.2.10.tar.gz && \
-    tar -zxf redis-7.2.10.tar.gz && \
-    cd redis-7.2.10 && \
+    curl -SsLf "http://download.redis.io/releases/redis-7.2.11.tar.gz" -o redis-7.2.11.tar.gz && \
+    tar -zxf redis-7.2.11.tar.gz && \
+    cd redis-7.2.11 && \
     make BUILD_TLS=yes && \
     make install PREFIX=/opt/bitnami/redis && \
     mkdir -p /opt/bitnami/redis/etc && \
@@ -50,7 +50,7 @@ RUN ln -s /opt/bitnami/scripts/redis/entrypoint.sh /entrypoint.sh
 RUN ln -s /opt/bitnami/scripts/redis/run.sh /run.sh
 COPY rootfs /
 RUN /opt/bitnami/scripts/redis/postunpack.sh
-ENV APP_VERSION="7.2.10" \
+ENV APP_VERSION="7.2.11" \
     BITNAMI_APP_NAME="redis" \
     PATH="/opt/bitnami/common/bin:/opt/bitnami/redis/bin:$PATH"
 EXPOSE 6379
