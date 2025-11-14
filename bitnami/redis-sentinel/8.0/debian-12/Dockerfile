@@ -1,59 +1,59 @@
-# Copyright Broadcom, Inc. All Rights Reserved.
-# SPDX-License-Identifier: APACHE-2.0
-
 FROM docker.io/bitnami/minideb:bookworm
-
-ARG DOWNLOADS_URL="downloads.bitnami.com/files/stacksmith"
 ARG TARGETARCH
-
-LABEL com.vmware.cp.artifact.flavor="sha256:c50c90cfd9d12b445b011e6ad529f1ad3daea45c26d20b00732fae3cd71f6a83" \
-      org.opencontainers.image.base.name="docker.io/bitnami/minideb:bookworm" \
-      org.opencontainers.image.created="2025-07-17T03:18:58Z" \
-      org.opencontainers.image.description="Application packaged by Broadcom, Inc." \
-      org.opencontainers.image.documentation="https://github.com/bitnami/containers/tree/main/bitnami/redis-sentinel/README.md" \
-      org.opencontainers.image.source="https://github.com/bitnami/containers/tree/main/bitnami/redis-sentinel" \
-      org.opencontainers.image.title="redis-sentinel" \
-      org.opencontainers.image.vendor="Broadcom, Inc." \
-      org.opencontainers.image.version="8.0.3"
-
+LABEL org.opencontainers.image.title="redis-sentinel" \
+      org.opencontainers.image.version="8.0.4" \
+      org.opencontainers.image.licenses="Apache-2.0"
 ENV HOME="/" \
     OS_ARCH="${TARGETARCH:-amd64}" \
     OS_FLAVOUR="debian-12" \
-    OS_NAME="linux" \
-    PATH="/opt/bitnami/redis-sentinel/bin:$PATH"
-
+    OS_NAME="linux"
 COPY prebuildfs /
 SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
-# Install required system packages and dependencies
-RUN install_packages ca-certificates curl libgcc-s1 libssl3 libstdc++6 openssl procps
-RUN --mount=type=secret,id=downloads_url,env=SECRET_DOWNLOADS_URL \
-    DOWNLOADS_URL=${SECRET_DOWNLOADS_URL:-${DOWNLOADS_URL}} ; \
-    mkdir -p /tmp/bitnami/pkg/cache/ ; cd /tmp/bitnami/pkg/cache/ || exit 1 ; \
-    COMPONENTS=( \
-      "redis-sentinel-8.0.3-1-linux-${OS_ARCH}-debian-12" \
-    ) ; \
-    for COMPONENT in "${COMPONENTS[@]}"; do \
-      if [ ! -f "${COMPONENT}.tar.gz" ]; then \
-        curl -SsLf "https://${DOWNLOADS_URL}/${COMPONENT}.tar.gz" -O ; \
-        curl -SsLf "https://${DOWNLOADS_URL}/${COMPONENT}.tar.gz.sha256" -O ; \
-      fi ; \
-      sha256sum -c "${COMPONENT}.tar.gz.sha256" ; \
-      tar -zxf "${COMPONENT}.tar.gz" -C /opt/bitnami --strip-components=2 --no-same-owner ; \
-      rm -rf "${COMPONENT}".tar.gz{,.sha256} ; \
-    done
-RUN apt-get update && apt-get upgrade -y && \
+
+# Install required system packages and dependencies for building Redis and wait-for-port
+RUN install_packages ca-certificates curl libgomp1 libssl-dev procps build-essential pkg-config golang-go
+
+# This was copied from an existing running instance
+COPY redis-default.conf /opt/bitnami/redis-sentinel/etc/redis-default.conf
+
+# Download and build Redis from official source
+RUN mkdir -p /tmp/redis && cd /tmp/redis && \
+    curl -SsLf "http://download.redis.io/releases/redis-8.0.4.tar.gz" -o redis-8.0.4.tar.gz && \
+    tar -zxf redis-8.0.4.tar.gz && \
+    cd redis-8.0.4 && \
+    make BUILD_TLS=yes && \
+    make install PREFIX=/opt/bitnami/redis-sentinel && \
+    mkdir -p /opt/bitnami/redis-sentinel/etc && \
+    cd / && \
+    rm -rf /tmp/redis
+
+# Build wait-for-port from source
+RUN mkdir -p /tmp/wait-for-port && cd /tmp/wait-for-port && \
+    curl -SsLf "https://github.com/bitnami/wait-for-port/archive/refs/tags/v1.0.7.tar.gz" -o wait-for-port.tar.gz && \
+    tar -zxf wait-for-port.tar.gz && \
+    cd wait-for-port-1.0.7 && \
+    go build -o wait-for-port . && \
+    mkdir -p /opt/bitnami/common/bin && \
+    mv wait-for-port /opt/bitnami/common/bin/ && \
+    chmod +x /opt/bitnami/common/bin/wait-for-port && \
+    cd / && \
+    rm -rf /tmp/wait-for-port
+
+# Clean up build dependencies and packages
+RUN apt-get autoremove --purge -y curl build-essential pkg-config golang-go && \
+    apt-get update && apt-get upgrade -y && \
     apt-get clean && rm -rf /var/lib/apt/lists /var/cache/apt/archives
+
 RUN chmod g+rwX /opt/bitnami
 RUN find / -perm /6000 -type f -exec chmod a-s {} \; || true
-RUN uninstall_packages curl
-
+RUN ln -s /opt/bitnami/scripts/redis-sentinel/entrypoint.sh /entrypoint.sh
+RUN ln -s /opt/bitnami/scripts/redis-sentinel/run.sh /run.sh
 COPY rootfs /
 RUN /opt/bitnami/scripts/redis-sentinel/postunpack.sh
-ENV APP_VERSION="8.0.3" \
-    BITNAMI_APP_NAME="redis-sentinel"
-
-EXPOSE 26379
-
+ENV APP_VERSION="8.0.4" \
+    BITNAMI_APP_NAME="redis-sentinel" \
+    PATH="/opt/bitnami/common/bin:/opt/bitnami/redis-sentinel/bin:$PATH"
+EXPOSE 6379
 USER 1001
 ENTRYPOINT [ "/opt/bitnami/scripts/redis-sentinel/entrypoint.sh" ]
 CMD [ "/opt/bitnami/scripts/redis-sentinel/run.sh" ]
