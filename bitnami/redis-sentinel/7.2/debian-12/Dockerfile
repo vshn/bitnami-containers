@@ -14,7 +14,7 @@ SHELL ["/bin/bash", "-o", "errexit", "-o", "nounset", "-o", "pipefail", "-c"]
 RUN install_packages ca-certificates curl libgomp1 libssl-dev procps build-essential pkg-config golang-go
 
 # This was copied from an existing running instance
-COPY redis-default.conf /opt/bitnami/redis/etc/redis-default.conf
+COPY sentinel.conf /opt/bitnami/redis-sentinel/etc/sentinel.conf
 
 # Download and build Redis from official source
 RUN mkdir -p /tmp/redis && cd /tmp/redis && \
