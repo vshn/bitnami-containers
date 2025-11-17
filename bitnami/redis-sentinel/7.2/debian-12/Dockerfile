@@ -1,8 +1,8 @@
 FROM docker.io/bitnami/minideb:bookworm
 ARG TARGETARCH
 LABEL org.opencontainers.image.title="redis" \
-      org.opencontainers.image.version="7.2.11" \
-      org.opencontainers.image.licenses="Apache-2.0"
+    org.opencontainers.image.version="7.2.12" \
+    org.opencontainers.image.licenses="Apache-2.0"
 ENV HOME="/" \
     OS_ARCH="${TARGETARCH:-amd64}" \
     OS_FLAVOUR="debian-12" \
@@ -18,9 +18,9 @@ COPY sentinel.conf /opt/bitnami/redis-sentinel/etc/sentinel.conf
 
 # Download and build Redis from official source
 RUN mkdir -p /tmp/redis && cd /tmp/redis && \
-    curl -SsLf "http://download.redis.io/releases/redis-7.2.11.tar.gz" -o redis-7.2.11.tar.gz && \
-    tar -zxf redis-7.2.11.tar.gz && \
-    cd redis-7.2.11 && \
+    curl -SsLf "http://download.redis.io/releases/redis-7.2.12.tar.gz" -o redis-7.2.12.tar.gz && \
+    tar -zxf redis-7.2.12.tar.gz && \
+    cd redis-7.2.12 && \
     make BUILD_TLS=yes && \
     make install PREFIX=/opt/bitnami/redis-sentinel && \
     mkdir -p /opt/bitnami/redis-sentinel/etc && \
@@ -50,7 +50,7 @@ RUN ln -s /opt/bitnami/scripts/redis-sentinel/entrypoint.sh /entrypoint.sh
 RUN ln -s /opt/bitnami/scripts/redis-sentinel/run.sh /run.sh
 COPY rootfs /
 RUN /opt/bitnami/scripts/redis-sentinel/postunpack.sh
-ENV APP_VERSION="7.2.11" \
+ENV APP_VERSION="7.2.12" \
     BITNAMI_APP_NAME="redis" \
     PATH="/opt/bitnami/common/bin:/opt/bitnami/redis-sentinel/bin:$PATH"
 EXPOSE 6379

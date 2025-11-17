@@ -1,8 +1,8 @@
 FROM docker.io/bitnami/minideb:bookworm
 ARG TARGETARCH
 LABEL org.opencontainers.image.title="redis" \
-      org.opencontainers.image.version="8.0.4" \
-      org.opencontainers.image.licenses="Apache-2.0"
+    org.opencontainers.image.version="8.0.5" \
+    org.opencontainers.image.licenses="Apache-2.0"
 ENV HOME="/" \
     OS_ARCH="${TARGETARCH:-amd64}" \
     OS_FLAVOUR="debian-12" \
@@ -18,9 +18,9 @@ COPY redis-default.conf /opt/bitnami/redis/etc/redis-default.conf
 
 # Download and build Redis from official source
 RUN mkdir -p /tmp/redis && cd /tmp/redis && \
-    curl -SsLf "http://download.redis.io/releases/redis-8.0.4.tar.gz" -o redis-8.0.4.tar.gz && \
-    tar -zxf redis-8.0.4.tar.gz && \
-    cd redis-8.0.4 && \
+    curl -SsLf "http://download.redis.io/releases/redis-8.0.5.tar.gz" -o redis-8.0.5.tar.gz && \
+    tar -zxf redis-8.0.5.tar.gz && \
+    cd redis-8.0.5 && \
     make BUILD_TLS=yes && \
     make install PREFIX=/opt/bitnami/redis && \
     mkdir -p /opt/bitnami/redis/etc && \
@@ -50,7 +50,7 @@ RUN ln -s /opt/bitnami/scripts/redis/entrypoint.sh /entrypoint.sh
 RUN ln -s /opt/bitnami/scripts/redis/run.sh /run.sh
 COPY rootfs /
 RUN /opt/bitnami/scripts/redis/postunpack.sh
-ENV APP_VERSION="8.0.4" \
+ENV APP_VERSION="8.0.5" \
     BITNAMI_APP_NAME="redis" \
     PATH="/opt/bitnami/common/bin:/opt/bitnami/redis/bin:$PATH"
 EXPOSE 6379
